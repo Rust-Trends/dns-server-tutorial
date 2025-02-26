@@ -65,7 +65,7 @@ impl Header {
             tc: (buf[2] & 0b0000_0010) != 0,
             rd: (buf[2] & 0b0000_0001) != 0,
             ra: (buf[3] & 0b1000_0000) != 0,
-            z: (buf[3] & 0b0111_1000) >> 4,
+            z: (buf[3] & 0b0111_0000) >> 4,
             rcode: buf[3] & 0b0000_1111,
             qdcount: u16::from_be_bytes([buf[4], buf[5]]),
             ancount: u16::from_be_bytes([buf[6], buf[7]]),
