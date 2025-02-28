@@ -36,6 +36,7 @@ pub struct Header {
 impl Header {
     const DNS_HEADER_LEN: usize = 12;
 
+    // Serialize the header to a byte array
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(Header::DNS_HEADER_LEN);
 
@@ -56,6 +57,7 @@ impl Header {
         buf
     }
 
+    // Deserialize the header from a byte array
     pub fn from_bytes(buf: &[u8]) -> Result<Header, ErrorCondition> {
         if buf.len() < Header::DNS_HEADER_LEN {
             return Err(ErrorCondition::DeserializationErr(
@@ -71,7 +73,7 @@ impl Header {
             tc: (buf[2] & 0b0000_0010) != 0,
             rd: (buf[2] & 0b0000_0001) != 0,
             ra: (buf[3] & 0b1000_0000) != 0,
-            z: (buf[3] & 0b0111_1000) >> 4,
+            z: (buf[3] & 0b0111_0000) >> 4,
             rcode: buf[3] & 0b0000_1111,
             qdcount: u16::from_be_bytes([buf[4], buf[5]]),
             ancount: u16::from_be_bytes([buf[6], buf[7]]),
@@ -257,9 +259,9 @@ impl Class {
 }
 
 impl Question {
+    // The from_bytes() function reconstructs a Question struct by iterating through the buffer, extracting labels,
+    // parsing the query type and class.
     pub fn from_bytes(buf: &[u8]) -> Result<Self, ErrorCondition> {
-        // Extract the labels from the buffer
-        // and add it to the Vec<Label>
         let mut index = 0;
         let mut labels: Vec<Label> = Vec::new();
 
@@ -268,7 +270,7 @@ impl Question {
             let len = buf[index] as usize;
             index += 1;
             labels.push(Label::new(&buf[index..index + len])?);
-            println!("{:?}", labels);
+            println!("{:?}", labels); // For debugging purposes
             index += len;
         }
 
@@ -298,49 +300,6 @@ impl Question {
         // Write the question type and class to the buffer
         buf.extend_from_slice(&self.qtype.to_bytes());
         buf.extend_from_slice(&self.qclass.to_bytes());
-
-        buf
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ResourceRecord {
-    pub name: String,
-    pub rtype: Type,
-    pub rclass: Class,
-    pub ttl: u32,
-    pub rdlength: u16,
-    pub rdata: Vec<u8>,
-}
-
-impl Default for ResourceRecord {
-    fn default() -> Self {
-        ResourceRecord {
-            name: String::from("www.rust-trends.com"),
-            rtype: Type::A,
-            rclass: Class::IN,
-            ttl: 60,
-            rdlength: 4,
-            rdata: Vec::from([172,67,221,148]),
-        }
-    }
-}
-
-impl ResourceRecord {
-    pub fn to_bytes(&self) -> Vec<u8> {
-        let mut buf = Vec::with_capacity(MAX_DNS_MESSAGE_SIZE);
-
-        self.name.split('.').for_each(|label| {
-            buf.push(label.len() as u8);
-            buf.extend_from_slice(label.as_bytes());
-        });
-
-        buf.push(0);
-        buf.extend_from_slice(&self.rtype.to_bytes());
-        buf.extend_from_slice(&self.rclass.to_bytes());
-        buf.extend_from_slice(&self.ttl.to_be_bytes());
-        buf.extend_from_slice(&self.rdlength.to_be_bytes());
-        buf.extend_from_slice(&self.rdata);
 
         buf
     }

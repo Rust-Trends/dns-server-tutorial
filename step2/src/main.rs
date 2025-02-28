@@ -2,7 +2,7 @@
 use std::net::UdpSocket;
 
 mod dns;
-use dns::{Header, Question, ResourceRecord};
+use dns::{Header, Question};
 
 // Debug print hex bytes of a buffer 16 bytes width followed by the ASCII representation of the bytes
 fn debug_print_bytes(buf: &[u8]) {
@@ -35,11 +35,11 @@ fn main() {
     loop {
         let (len, addr) = socket.recv_from(&mut buf).expect("Could not receive data");
 
-        println!("\nReceived query from {} of lenght {} bytes", addr, len);
+        println!("\nReceived query from {} with length {} bytes", addr, len);
         println!("\n### DNS Query: ###");
         debug_print_bytes(&buf[..len]);
 
-        let mut header = Header::from_bytes(&buf[..12]).expect("Could not parse DNS header");
+        let header = Header::from_bytes(&buf[..12]).expect("Could not parse DNS header");
         println!("\n{:?}", header);
 
         println!("\n### Question: ###");
@@ -48,26 +48,5 @@ fn main() {
 
         let question = Question::from_bytes(&buf[12..len]).expect("Could not parse DNS question");
         println!("\n{:?}", question);
-
-        // We parsed the DNS query and question, now we can respond to it
-        let answer = ResourceRecord::default();
-
-        println!("{:?}", answer);
-
-        // Adapt the header to have the answer count set to 1
-        header.ancount = 1;
-        header.qdcount = 1;
-        header.qr = true;
-
-        // Create a response message with the header and question
-        let mut response = Vec::default();
-        response.extend_from_slice(&header.to_bytes());
-        response.extend_from_slice(&question.to_bytes());
-        response.extend_from_slice(&answer.to_bytes());
-
-        // Send the response back to the client
-        socket
-            .send_to(&response, addr)
-            .expect("Could not send response");
     }
 }

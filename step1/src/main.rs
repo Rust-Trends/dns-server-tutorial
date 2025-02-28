@@ -35,7 +35,7 @@ fn main() {
     loop {
         let (len, addr) = socket.recv_from(&mut buf).expect("Could not receive data");
         
-        println!("\nReceived query from {} of lenght {} bytes", addr, len);
+        println!("\nReceived query from {} with length {} bytes", addr, len);
         debug_print_bytes(&buf[..len]);
         
         let header = Header::from_bytes(&buf[..len]).expect("Could not parse DNS header");
